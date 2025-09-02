@@ -27,6 +27,8 @@ export interface CarouselCardProps {
   index: number;
   /** 是否为活跃状态 */
   isActive: boolean;
+  /** 是否正在滚动 */
+  isScrolling?: boolean;
   /** 点击回调 */
   onClick?: (item: CarouselItem) => void;
 }
@@ -84,8 +86,27 @@ export function CarouselCard({
   position,
   index,
   isActive,
+  isScrolling = false,
   onClick
 }: CarouselCardProps) {
+  // 添加鼠标悬停状态
+  const [isHovered, setIsHovered] = React.useState(false);
+  // 根据滚动状态生成不同的3D变换
+  const generate3DTransform = () => {
+    if (isScrolling) {
+      // 滚动时有倾斜效果
+      const perspectiveY = isActive ? -15 : -25;
+      const perspectiveX = isActive ? 5 : 8;
+      return `perspective(1200px) rotateY(${perspectiveY}deg) rotateX(${perspectiveX}deg) scale(${position.scale}) translateZ(${position.z}px)`;
+    } else {
+      // 静止时没有倾斜，保持正的状态
+      return `scale(${position.scale}) translateZ(${position.z}px)`;
+    }
+  };
+
+  // 悬停时的缩放
+  const hoverScale = isHovered ? 1.05 : 1;
+
   return (
     <motion.div
       className={cn(
@@ -97,7 +118,6 @@ export function CarouselCard({
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
-        transform: `translate(-50%, -50%) ${generateTransform(position)}`,
         opacity: position.opacity,
         filter: generateFilter(position),
         zIndex: isActive ? 20 : Math.max(1, 10 - Math.abs(position.x / 100)),
@@ -106,12 +126,29 @@ export function CarouselCard({
       animate={{
         left: `${position.x}%`,
         top: `${position.y}%`,
+        transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
       }}
       transition={{
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 1],
+        left: {
+          duration: 0.6,
+          ease: [0.25, 0.25, 0.25, 1],
+        },
+        top: {
+          duration: 0.6,
+          ease: [0.25, 0.25, 0.25, 1],
+        },
+        transform: {
+          duration: isScrolling ? 0.2 : 0.4, // 滚动时快速响应，停止时平滑过渡
+          ease: "easeInOut",
+        },
+        opacity: {
+          duration: 0.3,
+          ease: "easeInOut",
+        }
       }}
       onClick={() => onClick?.(item)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Card 
         className={cn(

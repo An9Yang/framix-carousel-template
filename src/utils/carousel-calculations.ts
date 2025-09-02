@@ -188,10 +188,8 @@ export function getScrollProgress(scrollY: number, startOffset: number, endOffse
  * @returns CSS transform 字符串
  */
 export function generateTransform(position: CarouselCardPosition): string {
-  // 添加3D倾斜效果
-  const perspectiveY = position.isActive ? -15 : -25; // Y轴旋转角度
-  const perspectiveX = position.isActive ? 5 : 8; // X轴旋转角度
-  return `perspective(1200px) rotateY(${perspectiveY}deg) rotateX(${perspectiveX}deg) scale(${position.scale}) translateZ(${position.z}px)`;
+  // 简单的缩放和Z轴位移，3D倾斜效果由组件控制
+  return `scale(${position.scale}) translateZ(${position.z}px)`;
 }
 
 /**

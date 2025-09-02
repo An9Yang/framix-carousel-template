@@ -58,6 +58,35 @@ export function ParallaxCarousel({
     throttleDelay: 8
   });
 
+  // 添加滚动状态检测
+  const [isScrolling, setIsScrolling] = React.useState(false);
+  const scrollTimeoutRef = React.useRef<NodeJS.Timeout>();
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(true);
+      
+      // 清除之前的timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // 设置新的timeout，150ms后认为滚动停止
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // 计算轮播进度
   const carouselProgress = useMemo(() => {
     return getScrollProgress(scrollY, startOffset, endOffset);
@@ -111,6 +140,7 @@ export function ParallaxCarousel({
               position={position}
               index={index}
               isActive={isActive}
+              isScrolling={isScrolling}
             />
           );
         })}

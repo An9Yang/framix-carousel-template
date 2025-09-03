@@ -94,24 +94,34 @@ export function CarouselCard({
 }: CarouselCardProps) {
   // 添加鼠标悬停状态
   const [isHovered, setIsHovered] = React.useState(false);
-  // 根据滚动状态和方向生成不同的3D变换
-  const generate3DTransform = () => {
+  // 使用状态来平滑过渡倾斜角度
+  const [currentTiltX, setCurrentTiltX] = React.useState(0);
+  const [currentTiltY, setCurrentTiltY] = React.useState(0);
+  
+  React.useEffect(() => {
     if (isScrolling) {
-      // 滚动时有倾斜效果，根据方向调整
-      const perspectiveY = isActive ? -15 : -25;
-      // 根据滚动方向调整X轴旋转：向下滚动时向前倾（负值），向上滚动时向后仰（正值）
-      const perspectiveX = scrollDirection === 'down' 
-        ? (isActive ? -5 : -8)  // 向前倾斜
-        : (isActive ? 5 : 8);    // 向后倾斜
-      return `perspective(1200px) rotateY(${perspectiveY}deg) rotateX(${perspectiveX}deg) scale(${position.scale}) translateZ(${position.z}px)`;
+      // 滚动时的倾斜角度（更微妙的效果）
+      const targetTiltY = isActive ? -8 : -12; // 减小Y轴旋转
+      const targetTiltX = scrollDirection === 'down' 
+        ? (isActive ? -3 : -5)  // 向前倾斜（更微妙）
+        : (isActive ? 3 : 5);    // 向后倾斜（更微妙）
+      
+      setCurrentTiltY(targetTiltY);
+      setCurrentTiltX(targetTiltX);
     } else {
-      // 静止时没有倾斜，保持正的状态
-      return `scale(${position.scale}) translateZ(${position.z}px)`;
+      // 静止时缓慢恢复到0
+      setCurrentTiltY(0);
+      setCurrentTiltX(0);
     }
+  }, [isScrolling, scrollDirection, isActive]);
+  
+  // 根据当前倾斜状态生成3D变换
+  const generate3DTransform = () => {
+    return `perspective(1500px) rotateY(${currentTiltY}deg) rotateX(${currentTiltX}deg) scale(${position.scale}) translateZ(${position.z}px)`;
   };
 
-  // 悬停时的缩放
-  const hoverScale = isHovered ? 1.05 : 1;
+  // 悬停时的缩放（更微妙）
+  const hoverScale = isHovered ? 1.03 : 1;
 
   return (
     <motion.div
@@ -128,17 +138,18 @@ export function CarouselCard({
         opacity: position.opacity,
         filter: generateFilter(position),
         zIndex: isActive ? 20 : Math.max(1, 10 - Math.abs(position.x / 100)),
-        transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
       }}
       initial={false}
       animate={{
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        opacity: position.opacity,
+        transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
       }}
       transition={{
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 1],
+        transform: {
+          type: "spring",
+          stiffness: isScrolling ? 300 : 100,  // 滚动时快速响应，停止时缓慢
+          damping: isScrolling ? 30 : 20,      // 增加阻尼使动画更平滑
+          mass: 1,
+        },
       }}
       onClick={() => onClick?.(item)}
       onMouseEnter={() => setIsHovered(true)}

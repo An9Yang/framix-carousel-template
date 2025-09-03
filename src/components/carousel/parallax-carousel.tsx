@@ -83,10 +83,10 @@ export function ParallaxCarousel({
         clearTimeout(scrollTimeoutRef.current);
       }
       
-      // 设置新的timeout，150ms后认为滚动停止
+      // 设置新的timeout，300ms后认为滚动停止（增加缓冲时间）
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
-      }, 150);
+      }, 300);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

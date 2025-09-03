@@ -34,10 +34,10 @@ export function Logo({ className }: { className?: string }) {
  */
 export function NavBar({ className }: { className?: string }) {
   const navItems = [
-    { label: 'HOME', href: '#', active: true },
-    { label: 'WORK', href: '#work' },
-    { label: 'ABOUT', href: '#about' },
-    { label: 'BLOG', href: '#blog' },
+    { label: 'HOME', href: '/', active: window.location.pathname === '/' },
+    { label: 'WORK', href: '/work', active: window.location.pathname === '/work' },
+    { label: 'ABOUT', href: '/about', active: window.location.pathname === '/about' },
+    { label: 'BLOG', href: '/blog', active: window.location.pathname === '/blog' },
   ];
 
   return (

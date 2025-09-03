@@ -19,12 +19,13 @@ export default function AboutPage() {
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
   const floatingRef = React.useRef<HTMLDivElement | null>(null);
   const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const titleRefs = React.useRef<Record<string, HTMLHeadingElement | null>>({});
 
   // Smooth y transform for the floating preview (use transform instead of top)
   const yMV = useMotionValue(0);
   const ySpring = useSpring(yMV, { stiffness: 260, damping: 28, mass: 0.7 });
-  const xMV = useMotionValue(0);
-  const xSpring = useSpring(xMV, { stiffness: 300, damping: 30, mass: 0.8 });
+  const rightMV = useMotionValue(0);
+  const rightSpring = useSpring(rightMV, { stiffness: 300, damping: 30, mass: 0.8 });
 
   // Slightly varied tilt per hover for elegance
   const [tiltFrom, setTiltFrom] = useState<number>(-4.8);
@@ -74,7 +75,9 @@ export default function AboutPage() {
     };
   }, [hoveredService, activeService]);
 
-  // Recalculate floating preview vertical position precisely
+  // Recalculate floating preview position precisely
+  // - Vertical: overlay center aligns to the title's center Y
+  // - Horizontal: overlay center aligns to (rowRight - inset)
   React.useLayoutEffect(() => {
     if (!activeService || !listRef.current) return;
     const containerRect = listRef.current.getBoundingClientRect();
@@ -82,24 +85,36 @@ export default function AboutPage() {
     if (!el) return;
     const rect = el.getBoundingClientRect();
 
-    // Assume a default preview height; fall back if not mounted yet
+    const titleEl = titleRefs.current[activeService];
+    const titleRect = titleEl?.getBoundingClientRect();
     const fallbackH = 340; // match visual size below
     const overlayH = overlayRef.current?.getBoundingClientRect().height ?? fallbackH;
-    const centerY = rect.top + rect.height / 2 - containerRect.top; // Y inside container
-    const targetY = centerY - overlayH / 2; // center-align
+    // Prefer title center Y; fallback to row center
+    const refCenterY = titleRect
+      ? (titleRect.top + titleRect.height / 2)
+      : (rect.top + rect.height / 2);
+    const targetY = refCenterY - containerRect.top - overlayH / 2; // center-align
     yMV.set(targetY);
 
-    // Reset x offset before measuring for overflow
-    xMV.set(0);
+    // Horizontal alignment using overlay center anchoring at 5/6 of row width
+    const ratio = 5 / 6; // 5/6 from the left
+    const margin = 24; // container safe margin
     requestAnimationFrame(() => {
-      const target = floatingRef.current ?? overlayRef.current;
-      if (!target) return;
-      const overlayRect = target.getBoundingClientRect();
-      const margin = 32; // larger safety margin
-      const overflowRight = overlayRect.right - (window.innerWidth - margin);
-      if (overflowRight > 0) {
-        xMV.set(-overflowRight);
-      }
+      const targetNode = floatingRef.current ?? overlayRef.current;
+      if (!targetNode) return;
+      const overlayRect = targetNode.getBoundingClientRect();
+      const overlayW = overlayRect.width || 560;
+      const rowLeftInContainer = rect.left - containerRect.left;
+      const rowWidth = rect.width;
+      const containerW = containerRect.width;
+      // Overlay center X should be at rowLeft + rowWidth * ratio
+      const anchorX = rowLeftInContainer + rowWidth * ratio;
+      let desiredRight = containerW - anchorX - overlayW / 2; // right offset from container's right
+      // Clamp so left >= margin and right >= margin
+      const maxRight = containerW - overlayW - margin; // ensure left >= margin
+      if (desiredRight > maxRight) desiredRight = maxRight;
+      if (desiredRight < margin) desiredRight = margin;
+      rightMV.set(desiredRight);
     });
   }, [activeService, yMV]);
 
@@ -116,17 +131,22 @@ export default function AboutPage() {
       const centerY = rect.top + rect.height / 2 - containerRect.top;
       yMV.set(centerY - overlayH / 2);
 
-      // adjust horizontal overflow on resize/scroll
-      const target = floatingRef.current ?? overlayRef.current;
-      if (target) {
-        const overlayRect = target.getBoundingClientRect();
-        const margin = 32;
-        const overflowRight = overlayRect.right - (window.innerWidth - margin);
-        if (overflowRight > 0) {
-          xMV.set(-overflowRight);
-        } else {
-          xMV.set(0);
-        }
+      // Horizontal: recompute right so overlay center ≈ rowLeft + rowWidth * (5/6)
+      const targetNode = floatingRef.current ?? overlayRef.current;
+      if (targetNode) {
+        const overlayRect = targetNode.getBoundingClientRect();
+        const overlayW = overlayRect.width || 560;
+        const margin = 24;
+        const rowLeftInContainer = rect.left - containerRect.left;
+        const rowWidth = rect.width;
+        const containerW = containerRect.width;
+        const ratio = 5 / 6;
+        const anchorX = rowLeftInContainer + rowWidth * ratio;
+        let desiredRight = containerW - anchorX - overlayW / 2;
+        const maxRight = containerW - overlayW - margin;
+        if (desiredRight > maxRight) desiredRight = maxRight;
+        if (desiredRight < margin) desiredRight = margin;
+        rightMV.set(desiredRight);
       }
     };
     window.addEventListener('resize', handler);
@@ -145,14 +165,7 @@ export default function AboutPage() {
     setTiltTo(target);
   }, [activeService, computeTilts]);
 
-  // Pick slightly different tilt per active service change
-  React.useEffect(() => {
-    if (!activeService) return;
-    const to = -6 + Math.random() * 3; // [-6, -3]
-    const from = to + (Math.random() * 1.2 - 0.6); // ±0.6 around target
-    setTiltFrom(from);
-    setTiltTo(to);
-  }, [activeService]);
+  // remove duplicate tilt picker to avoid overriding computeTilts()
 
   const services = [
     {
@@ -459,22 +472,19 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          {/* 标题部分 - 左贴边 */}
-          <div className="mb-16">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* 标题部分 - 左侧标签 + 居中大标题 */}
+          <div className="mb-16 services-inner">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               <div className="lg:col-span-2">
                 <span 
                   className="inline-block text-xs font-medium"
-                  style={{ 
-                    color: 'var(--color-text-primary)',
-                    letterSpacing: '1px'
-                  }}
+                  style={{ color: 'var(--color-text-primary)', letterSpacing: '1px' }}
                 >
                   • SERVICES
                 </span>
               </div>
               <div className="lg:col-span-10">
-                <h2 className="font-semibold" style={{ color: 'var(--color-text-primary)', fontSize: '72px', lineHeight: 1.1 }}>
+                <h2 className="w-full text-center" style={{ color: 'var(--color-text-primary)', fontWeight: 700, fontSize: '72px', lineHeight: 1.1, letterSpacing: '-0.2px' }}>
                   What we do
                 </h2>
               </div>
@@ -482,7 +492,7 @@ export default function AboutPage() {
           </div>
 
         {/* 服务列表容器 - 相对定位，左贴边 */}
-        <div className="relative services-container"
+        <div className="relative services-container services-inner"
              ref={listRef}
              onMouseLeave={() => setHoveredService(null)}>
             
@@ -516,11 +526,10 @@ export default function AboutPage() {
                   }}
                   style={{
                     top: 0,
-                    right: 'clamp(56px, 6vw, 144px)',
+                    right: rightSpring as unknown as number,
                     width: 'clamp(600px, 46vw, 960px)',
                     zIndex: 100,
-                    willChange: 'transform, opacity',
-                    x: xSpring
+                    willChange: 'transform, opacity, right'
                   }}
                   ref={floatingRef}
                 >
@@ -621,11 +630,8 @@ export default function AboutPage() {
                           {/* 编号 */}
                           <div className="col-span-1">
                             <motion.span 
-                              className="text-sm lg:text-base font-semibold tracking-wider block opacity-70" 
-                              animate={{
-                                color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                                scale: isActive ? 1.1 : 1
-                              }}
+                              className="text-xs lg:text-[12px] font-semibold tracking-[0.5px] block" 
+                              style={{ color: 'rgba(0,0,0,0.45)' }}
                               transition={{
                                 duration: 0.3,
                                 ease: "easeInOut"
@@ -636,9 +642,10 @@ export default function AboutPage() {
                           </div>
 
                           {/* 标题 */}
-                          <div className="col-span-5 lg:col-span-2">
+                          <div className="col-span-5 lg:col-span-3 xl:col-span-2">
                             <motion.h3 
                               className="text-2xl lg:text-3xl font-semibold tracking-tight" 
+                              ref={(el) => { titleRefs.current[service.id] = el; }}
                               animate={{
                                 color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                                 x: isActive ? 2 : 0
@@ -654,14 +661,14 @@ export default function AboutPage() {
                           </div>
 
                           {/* 描述文本 - Always visible */}
-                          <div className="col-span-6 lg:col-span-8">
+                          <div className="col-span-6 lg:col-span-8 xl:col-span-9">
                             <div
-                              style={{ maxWidth: 'clamp(320px, 30vw, 520px)' }}
+                              style={{ maxWidth: 'clamp(360px, 34vw, 520px)' }}
                             >
                               <p 
                                 className="text-[15.5px] lg:text-[16px] leading-[1.55] tracking-[0.01em]"
                                 style={{ 
-                                  color: 'var(--color-text-muted)',
+                                  color: 'var(--color-text-tertiary)',
                                   display: '-webkit-box',
                                   WebkitLineClamp: 2 as any,
                                   WebkitBoxOrient: 'vertical' as any,

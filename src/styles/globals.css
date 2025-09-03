@@ -10,6 +10,7 @@
     --color-text-primary: #101010;
     --color-text-secondary: #404040;
     --color-text-muted: #606060;
+    --color-text-tertiary: rgba(16,16,16,0.62);
     --color-border: #e5e5e5;
     --color-shadow: rgba(0, 0, 0, 0.06);
     --color-accent-blue: #0070f0;
@@ -28,15 +29,15 @@
     --elev-nav: 0 2px 6px rgba(0, 0, 0, 0.08);
     
     /* Services section tokens */
-    --service-row-bg: #ececec;            /* card base */
-    --service-row-bg-active: #f5f5f5;     /* on hover/active */
-    --service-row-divider: rgba(0,0,0,0.06);
+    --service-row-bg: #f4f4f4;            /* softer gray card */
+    --service-row-bg-active: #f6f6f6;     /* on hover/active, very subtle */
+    --service-row-divider: rgba(0,0,0,0.04);
     --service-row-radius: 16px;
-    --service-shadow: 0 10px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
-    --service-shadow-active: 0 24px 60px rgba(0,0,0,0.14), 0 12px 24px rgba(0,0,0,0.08);
+    --service-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+    --service-shadow-active: 0 10px 20px rgba(0,0,0,0.08), 0 3px 8px rgba(0,0,0,0.05);
     --service-preview-tilt: -4.5deg;
     --service-preview-border: 6px;        /* white rim (thinner) */
-    --service-preview-shadow: 0 70px 160px rgba(0,0,0,0.22), 0 24px 70px rgba(0,0,0,0.14), 0 12px 24px rgba(0,0,0,0.10);
+    --service-preview-shadow: 0 30px 90px rgba(0,0,0,0.14), 0 12px 28px rgba(0,0,0,0.08);
     
     /* Original Tailwind CSS variables (keep for compatibility) */
     --background: 0 0% 94%;
@@ -271,14 +272,16 @@ body {
     position: relative;
   }
   .service-row-divider::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 1px;
-    transform: translateY(-50%);
-    background: linear-gradient(to right, transparent, var(--service-row-divider), transparent);
-    opacity: .7;
+    display: none; /* keep class but do not render divider */
   }
+
+  /* section safe paddings and inner width for full-bleed */
+  .full-bleed {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-left: clamp(24px, 3.5vw, 56px);
+    padding-right: clamp(24px, 3.5vw, 56px);
+  }
+  .services-inner { max-width: 1440px; margin-inline: auto; }
 }

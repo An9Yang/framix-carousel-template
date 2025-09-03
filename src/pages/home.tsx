@@ -5,7 +5,7 @@
  * 主要特色：固定的主标题 + 右侧垂直视差轮播效果。
  */
 import React from 'react';
-import { Header } from '@/components/layout/header';
+import { TopNavigation } from '@/components/layout/navbar';
 import { HeroSection, MobileHeroSection } from '@/components/layout/hero-section';
 import { CarouselSection, CarouselBackground } from '@/components/layout/carousel-section';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -39,9 +39,9 @@ export default function Home() {
         {/* 页面背景装饰 */}
         <CarouselBackground />
         
-        {/* 顶部导航栏 */}
+        {/* 三段式顶部导航 */}
         <div className="pointer-events-auto">
-          <Header />
+          <TopNavigation />
         </div>
         
         {/* 主内容区域 - 完全固定，不滚动 */}

@@ -33,36 +33,35 @@ export function Header({ className, fixed = true }: HeaderProps) {
   return (
     <header
       className={cn(
-        "w-full bg-transparent backdrop-blur-sm",
-        "border-b border-gray-200/20",
+        "w-full",
         "z-50",
-        fixed && "fixed top-0",
+        fixed && "fixed top-6 left-0 right-0",
         className
       )}
     >
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="flex justify-center px-6">
+        <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm rounded-full shadow-md px-5 py-2.5 gap-x-8" style={{ minWidth: '600px' }}>
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
+          <div className="flex items-center space-x-1.5">
+            <div className="w-6 h-6 bg-gray-900 rounded-sm flex items-center justify-center">
+              <span className="text-white font-bold text-xs">F</span>
             </div>
-            <span className="text-sm font-medium text-gray-900 hidden sm:block">
+            <span className="text-[11px] font-semibold text-gray-900 tracking-wider">
               FRAMIX
             </span>
           </div>
 
           {/* 主导航 */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="flex items-center space-x-5">
             {navItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "text-sm font-medium transition-colors duration-200",
+                  "text-[11px] font-medium transition-colors duration-200 tracking-wider",
                   item.active
                     ? "text-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
+                    : "text-gray-500 hover:text-gray-900"
                 )}
               >
                 {item.label}
@@ -71,24 +70,17 @@ export function Header({ className, fixed = true }: HeaderProps) {
           </nav>
 
           {/* 右侧按钮组 */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             {/* 邮箱联系 */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden sm:flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-            >
-              <Mail className="w-4 h-4" />
-              <span className="text-sm">EMAIL</span>
-            </Button>
+            <button className="flex items-center space-x-1 text-gray-500 hover:text-gray-900 transition-colors px-2">
+              <Mail className="w-3 h-3" />
+              <span className="text-[11px] tracking-wider">EMAIL</span>
+            </button>
 
             {/* 联系按钮 */}
-            <Button
-              size="sm"
-              className="bg-black hover:bg-gray-800 text-white px-6 py-2 text-sm font-medium"
-            >
+            <button className="bg-gray-900 hover:bg-black text-white px-4 py-1.5 text-[11px] font-semibold tracking-wider rounded-full transition-colors">
               CONTACT
-            </Button>
+            </button>
           </div>
         </div>
       </div>

@@ -4,8 +4,32 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
-    --foreground: 0 0% 20%;
+    /* Framix Design System Colors */
+    --color-bg: #f0f0f0;
+    --color-surface: #ffffff;
+    --color-text-primary: #101010;
+    --color-text-secondary: #404040;
+    --color-text-muted: #606060;
+    --color-border: #e5e5e5;
+    --color-shadow: rgba(0, 0, 0, 0.06);
+    --color-accent-blue: #0070f0;
+    --color-cta-black: #0a0a0a;
+    --color-badge-fg: #ffffff;
+    
+    /* Framix Design System Radii */
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --radius-full: 999px;
+    
+    /* Framix Design System Elevations */
+    --elev-card: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+    --elev-hover: 0 20px 60px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
+    --elev-nav: 0 2px 6px rgba(0, 0, 0, 0.08);
+    
+    /* Original Tailwind CSS variables (keep for compatibility) */
+    --background: 0 0% 94%;
+    --foreground: 0 0% 6%;
 
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
@@ -127,6 +151,12 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Apply Framix Design System styles to body */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 /* Grid Background Pattern */

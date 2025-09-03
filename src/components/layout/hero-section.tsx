@@ -23,93 +23,93 @@ export interface HeroSectionProps {
  */
 export function HeroSection({ className }: HeroSectionProps) {
   return (
-    <section
-      className={cn(
-        "fixed inset-0 flex flex-col justify-center",
-        "px-6 md:px-12 lg:px-16",
-        "pointer-events-none", // 允许点击穿透到轮播
-        className
-      )}
-    >
-      <div className="max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* 左侧主标题区域 */}
-          <motion.div
-            className="space-y-8"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+    <>
+      {/* 主标题区域 - 左上角定位 */}
+      <section
+        className={cn(
+          "fixed top-32 left-8 lg:left-12 xl:left-16",
+          "pointer-events-none", // 允许点击穿透到轮播
+          className
+        )}
+      >
+        {/* 主标题 - 按照设计系统 6xl (160px) */}
+        <motion.div className="space-y-4">
+          <motion.h1
+            className={cn(
+              "text-[10rem]", // 160px = 10rem
+              "font-extrabold",
+              "leading-[1.1]",
+              "select-none"
+            )}
+            style={{ 
+              fontWeight: 800,
+              letterSpacing: '-0.5px',
+              color: 'var(--color-text-primary)'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           >
-            {/* 主标题 */}
-            <div className="space-y-0">
-              <motion.h1
-                className={cn(
-                  "text-7xl md:text-8xl lg:text-9xl xl:text-[10rem]",
-                  "font-black tracking-tighter",
-                  "text-gray-800 leading-[0.85]",
-                  "select-none"
-                )}
-                style={{ fontWeight: 900 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                FRAMIX
-              </motion.h1>
-              
-              <motion.h1
-                className={cn(
-                  "text-7xl md:text-8xl lg:text-9xl xl:text-[10rem]",
-                  "font-black tracking-tighter",
-                  "text-gray-800 leading-[0.85]",
-                  "select-none"
-                )}
-                style={{ fontWeight: 900 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-              >
-                TEMPLATE
-              </motion.h1>
-            </div>
+            FRAMIX
+          </motion.h1>
+          
+          <motion.h1
+            className={cn(
+              "text-[10rem]", // 160px = 10rem
+              "font-extrabold",
+              "leading-[1.1]",
+              "select-none"
+            )}
+            style={{ 
+              fontWeight: 800,
+              letterSpacing: '-0.5px',
+              color: 'var(--color-text-primary)'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            TEMPLATE
+          </motion.h1>
+        </motion.div>
+      </section>
 
-            {/* 副标题和描述区域 */}
-            <motion.div
-              className="space-y-1 max-w-lg mt-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-            >
-              <h2 className="text-xl md:text-2xl font-medium text-gray-700 leading-tight">
-                Framix - Portfolio & Agency
-              </h2>
-              
-              <p className="text-lg text-gray-500 leading-tight">
-                Website Template
-              </p>
-            </motion.div>
+      {/* 副标题和滚动提示 - 固定在左下角 */}
+      <div className="fixed bottom-16 left-8 lg:left-12 xl:left-16 z-40 pointer-events-none">
+        {/* 副标题和描述区域 */}
+        <motion.div
+          className="space-y-2 mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+        >
+          <h2 className="text-2xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            Framix - Portfolio & Agency
+          </h2>
+          
+          <p className="text-xl" style={{ color: 'var(--color-text-secondary)' }}>
+            Website Template
+          </p>
+        </motion.div>
 
-            {/* 滚动提示 */}
-            <motion.div
-              className="flex items-center space-x-3 pt-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.9 }}
-            >
-              <div className="w-8 h-8 border border-gray-400 rounded-full flex items-center justify-center">
-                <ChevronDown className="w-4 h-4 text-gray-600 animate-bounce" />
-              </div>
-              <span className="text-sm text-gray-500 font-medium uppercase tracking-wide">
-                SCROLL DOWN
-              </span>
-            </motion.div>
-          </motion.div>
-
-          {/* 右侧为轮播预留空间 */}
-          <div className="hidden lg:block" />
-        </div>
+        {/* 滚动提示 */}
+        <motion.div
+          className="flex items-center space-x-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+        >
+          <div className="w-12 h-12 border-2 rounded-full flex items-center justify-center" 
+               style={{ borderColor: 'var(--color-border)' }}>
+            <ChevronDown className="w-6 h-6 animate-bounce" style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+          <span className="text-sm font-medium uppercase" 
+                style={{ color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>
+            SCROLL DOWN
+          </span>
+        </motion.div>
       </div>
-    </section>
+    </>
   );
 }
 

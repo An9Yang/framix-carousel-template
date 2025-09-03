@@ -58,12 +58,24 @@ export function ParallaxCarousel({
     throttleDelay: 8
   });
 
-  // 添加滚动状态检测
+  // 添加滚动状态检测和方向检测
   const [isScrolling, setIsScrolling] = React.useState(false);
+  const [scrollDirection, setScrollDirection] = React.useState<'up' | 'down'>('down');
   const scrollTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const lastScrollY = React.useRef(0);
 
   React.useEffect(() => {
     const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // 检测滚动方向
+      if (currentScrollY > lastScrollY.current) {
+        setScrollDirection('down');
+      } else if (currentScrollY < lastScrollY.current) {
+        setScrollDirection('up');
+      }
+      
+      lastScrollY.current = currentScrollY;
       setIsScrolling(true);
       
       // 清除之前的timeout
@@ -141,6 +153,7 @@ export function ParallaxCarousel({
               index={index}
               isActive={isActive}
               isScrolling={isScrolling}
+              scrollDirection={scrollDirection}
             />
           );
         })}

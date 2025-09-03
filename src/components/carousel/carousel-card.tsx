@@ -29,6 +29,8 @@ export interface CarouselCardProps {
   isActive: boolean;
   /** 是否正在滚动 */
   isScrolling?: boolean;
+  /** 滚动方向 */
+  scrollDirection?: 'up' | 'down';
   /** 点击回调 */
   onClick?: (item: CarouselItem) => void;
 }
@@ -87,16 +89,20 @@ export function CarouselCard({
   index,
   isActive,
   isScrolling = false,
+  scrollDirection = 'down',
   onClick
 }: CarouselCardProps) {
   // 添加鼠标悬停状态
   const [isHovered, setIsHovered] = React.useState(false);
-  // 根据滚动状态生成不同的3D变换
+  // 根据滚动状态和方向生成不同的3D变换
   const generate3DTransform = () => {
     if (isScrolling) {
-      // 滚动时有倾斜效果
+      // 滚动时有倾斜效果，根据方向调整
       const perspectiveY = isActive ? -15 : -25;
-      const perspectiveX = isActive ? 5 : 8;
+      // 根据滚动方向调整X轴旋转：向下滚动时向前倾（负值），向上滚动时向后仰（正值）
+      const perspectiveX = scrollDirection === 'down' 
+        ? (isActive ? -5 : -8)  // 向前倾斜
+        : (isActive ? 5 : 8);    // 向后倾斜
       return `perspective(1200px) rotateY(${perspectiveY}deg) rotateX(${perspectiveX}deg) scale(${position.scale}) translateZ(${position.z}px)`;
     } else {
       // 静止时没有倾斜，保持正的状态
@@ -113,7 +119,8 @@ export function CarouselCard({
         "absolute",
         "w-[44vw] h-[44vh]", // 整体缩小到44vw x 44vh
         "pointer-events-auto cursor-pointer",
-        "transform-gpu"
+        "transform-gpu",
+        "will-change-transform"
       )}
       style={{
         left: `${position.x}%`,
@@ -121,30 +128,17 @@ export function CarouselCard({
         opacity: position.opacity,
         filter: generateFilter(position),
         zIndex: isActive ? 20 : Math.max(1, 10 - Math.abs(position.x / 100)),
+        transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
       }}
       initial={false}
       animate={{
         left: `${position.x}%`,
         top: `${position.y}%`,
-        transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
+        opacity: position.opacity,
       }}
       transition={{
-        left: {
-          duration: 0.6,
-          ease: [0.25, 0.25, 0.25, 1],
-        },
-        top: {
-          duration: 0.6,
-          ease: [0.25, 0.25, 0.25, 1],
-        },
-        transform: {
-          duration: isScrolling ? 0.2 : 0.4, // 滚动时快速响应，停止时平滑过渡
-          ease: "easeInOut",
-        },
-        opacity: {
-          duration: 0.3,
-          ease: "easeInOut",
-        }
+        duration: 0.6,
+        ease: [0.25, 0.25, 0.25, 1],
       }}
       onClick={() => onClick?.(item)}
       onMouseEnter={() => setIsHovered(true)}

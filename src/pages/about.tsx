@@ -17,11 +17,36 @@ export default function AboutPage() {
   const lastUpdateTime = React.useRef<number>(0);
   const listRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
+  const floatingRef = React.useRef<HTMLDivElement | null>(null);
   const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   // Smooth y transform for the floating preview (use transform instead of top)
   const yMV = useMotionValue(0);
   const ySpring = useSpring(yMV, { stiffness: 260, damping: 28, mass: 0.7 });
+  const xMV = useMotionValue(0);
+  const xSpring = useSpring(xMV, { stiffness: 300, damping: 30, mass: 0.8 });
+
+  // Slightly varied tilt per hover for elegance
+  const [tiltFrom, setTiltFrom] = useState<number>(-4.8);
+  const [tiltTo, setTiltTo] = useState<number>(-4.2);
+
+  // Compute elegant random tilts within readable bounds
+  const computeTilts = React.useCallback(() => {
+    // Start anywhere in [-5.6°, +5.6°]
+    const start = (Math.random() * 11.2) - 5.6;
+    // Slightly larger motion: ±1.0°..±1.8°
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const delta = (1.0 + Math.random() * 0.8) * sign; // ±1.0..±1.8
+    let target = start + delta;
+    // Clamp to readable bounds
+    target = Math.max(-5.6, Math.min(5.6, target));
+    // Guarantee minimal perceptible motion (≥0.6°)
+    if (Math.abs(target - start) < 0.6) {
+      target = start + 0.6 * (delta >= 0 ? 1 : -1);
+      target = Math.max(-5.6, Math.min(5.6, target));
+    }
+    return { start, target };
+  }, []);
 
   React.useEffect(() => {
     // 使用 requestAnimationFrame 实现超流畅动画
@@ -63,6 +88,19 @@ export default function AboutPage() {
     const centerY = rect.top + rect.height / 2 - containerRect.top; // Y inside container
     const targetY = centerY - overlayH / 2; // center-align
     yMV.set(targetY);
+
+    // Reset x offset before measuring for overflow
+    xMV.set(0);
+    requestAnimationFrame(() => {
+      const target = floatingRef.current ?? overlayRef.current;
+      if (!target) return;
+      const overlayRect = target.getBoundingClientRect();
+      const margin = 32; // larger safety margin
+      const overflowRight = overlayRect.right - (window.innerWidth - margin);
+      if (overflowRight > 0) {
+        xMV.set(-overflowRight);
+      }
+    });
   }, [activeService, yMV]);
 
   // Update position on resize/scroll to keep alignment perfect
@@ -77,6 +115,19 @@ export default function AboutPage() {
       const overlayH = overlayRef.current?.getBoundingClientRect().height ?? fallbackH;
       const centerY = rect.top + rect.height / 2 - containerRect.top;
       yMV.set(centerY - overlayH / 2);
+
+      // adjust horizontal overflow on resize/scroll
+      const target = floatingRef.current ?? overlayRef.current;
+      if (target) {
+        const overlayRect = target.getBoundingClientRect();
+        const margin = 32;
+        const overflowRight = overlayRect.right - (window.innerWidth - margin);
+        if (overflowRight > 0) {
+          xMV.set(-overflowRight);
+        } else {
+          xMV.set(0);
+        }
+      }
     };
     window.addEventListener('resize', handler);
     window.addEventListener('scroll', handler, { passive: true } as any);
@@ -85,6 +136,23 @@ export default function AboutPage() {
       window.removeEventListener('scroll', handler);
     };
   }, [activeService, yMV]);
+
+  // Re-pick tilt when active item changes
+  React.useEffect(() => {
+    if (!activeService) return;
+    const { start, target } = computeTilts();
+    setTiltFrom(start);
+    setTiltTo(target);
+  }, [activeService, computeTilts]);
+
+  // Pick slightly different tilt per active service change
+  React.useEffect(() => {
+    if (!activeService) return;
+    const to = -6 + Math.random() * 3; // [-6, -3]
+    const from = to + (Math.random() * 1.2 - 0.6); // ±0.6 around target
+    setTiltFrom(from);
+    setTiltTo(to);
+  }, [activeService]);
 
   const services = [
     {
@@ -386,13 +454,13 @@ export default function AboutPage() {
 
         {/* SERVICES 部分 */}
         <motion.div 
-          className="mb-32 relative"
+          className="mb-32 relative full-bleed"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          {/* 标题部分 */}
-          <div className="max-w-7xl mx-auto mb-16">
+          {/* 标题部分 - 左贴边 */}
+          <div className="mb-16">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
               <div className="lg:col-span-2">
                 <span 
@@ -413,8 +481,8 @@ export default function AboutPage() {
             </div>
           </div>
 
-        {/* 服务列表容器 - 相对定位 */}
-        <div className="max-w-7xl mx-auto relative services-container"
+        {/* 服务列表容器 - 相对定位，左贴边 */}
+        <div className="relative services-container"
              ref={listRef}
              onMouseLeave={() => setHoveredService(null)}>
             
@@ -447,25 +515,42 @@ export default function AboutPage() {
                     }
                   }}
                   style={{
-                    top: 0, // 使用 transform: ySpring 对齐
-                    right: '-88px', // 参考图中向右外溢
-                    width: 'clamp(520px, 46vw, 860px)',
+                    top: 0,
+                    right: 'clamp(56px, 6vw, 144px)',
+                    width: 'clamp(600px, 46vw, 960px)',
                     zIndex: 100,
-                    willChange: 'transform, opacity'
+                    willChange: 'transform, opacity',
+                    x: xSpring
                   }}
+                  ref={floatingRef}
                 >
                   <motion.div
                     ref={overlayRef}
                     style={{ y: ySpring, width: '100%', aspectRatio: '16 / 9' }}
                   >
-                    <div 
+                    <motion.div 
                       className="w-full h-full"
                       style={{
                         backgroundColor: 'transparent',
                         borderRadius: '18px',
                         boxShadow: 'var(--service-preview-shadow)',
-                        transform: `perspective(1600px) rotateZ(var(--service-preview-tilt))`,
-                        transformStyle: 'preserve-3d'
+                        transformStyle: 'preserve-3d',
+                        transformPerspective: 1600
+                      }}
+                      initial={{ rotateZ: tiltFrom, rotateY: 0.8, rotateX: 0.22, scale: 1.004 }}
+                      animate={{ 
+                        rotateZ: tiltTo,
+                        rotateY: 1,
+                        rotateX: 0.2,
+                        scale: 1,
+                        boxShadow: '0 32px 90px rgba(0,0,0,0.16), 0 12px 28px rgba(0,0,0,0.09)'
+                      }}
+                      transition={{
+                        rotateZ: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+                        rotateX: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+                        rotateY: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+                        scale:   { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+                        boxShadow:{ duration: 0.4, ease: 'easeOut' }
                       }}
                     >
                       <div 
@@ -485,14 +570,11 @@ export default function AboutPage() {
                             initial={{ opacity: 0, scale: 1.02 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1 }}
-                            transition={{ 
-                              duration: 0.35, 
-                              ease: [0.2, 0.8, 0.2, 1]
-                            }}
+                            transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
                           />
                         </AnimatePresence>
                       </div>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 </motion.div>
               )}
@@ -529,11 +611,9 @@ export default function AboutPage() {
                         mass: 0.7
                       }}
                       style={{
-                        backgroundColor: 'var(--color-surface)',
                         zIndex: isActive ? 20 : 1,
                         transformOrigin: 'center center',
-                        willChange: 'transform, box-shadow',
-                        boxShadow: isActive ? 'var(--elev-hover)' : 'var(--elev-card)'
+                        willChange: 'transform, box-shadow'
                       }}
                     >
                       <div className="px-8 py-6 lg:px-10 lg:py-7">
@@ -556,7 +636,7 @@ export default function AboutPage() {
                           </div>
 
                           {/* 标题 */}
-                          <div className="col-span-5 lg:col-span-4">
+                          <div className="col-span-5 lg:col-span-2">
                             <motion.h3 
                               className="text-2xl lg:text-3xl font-semibold tracking-tight" 
                               animate={{
@@ -574,12 +654,12 @@ export default function AboutPage() {
                           </div>
 
                           {/* 描述文本 - Always visible */}
-                          <div className="col-span-6 lg:col-span-7">
+                          <div className="col-span-6 lg:col-span-8">
                             <div
-                              style={{ maxWidth: '720px' }}
+                              style={{ maxWidth: 'clamp(320px, 30vw, 520px)' }}
                             >
                               <p 
-                                className="text-base lg:text-[18px] leading-relaxed"
+                                className="text-[15.5px] lg:text-[16px] leading-[1.55] tracking-[0.01em]"
                                 style={{ 
                                   color: 'var(--color-text-muted)',
                                   display: '-webkit-box',

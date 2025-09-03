@@ -64,7 +64,7 @@ export function calculateCardPosition(cardIndex: number, scrollProgress: number,
   
   // 向左凸出弧形轨迹计算
   // 从右上角（135度）到右下角（225度），形成优雅的垂直对称弧线
-  const totalArcAngle = Math.PI * 0.6; // 增大弧度，让卡片间距更大
+  const totalArcAngle = Math.PI * 0.7; // 再增大弧度，让卡片间距更大
   
   // 修复：计算卡片间的角度间隔
   // 关键修复：对于 5 张卡片，我们需要 4 个间隔，但要确保所有卡片都能完整地移动到轨迹的每个位置

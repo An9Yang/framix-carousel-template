@@ -133,17 +133,29 @@ export function CarouselCard({
         "will-change-transform"
       )}
       style={{
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        opacity: position.opacity,
         filter: generateFilter(position),
         zIndex: isActive ? 20 : Math.max(1, 10 - Math.abs(position.x / 100)),
       }}
       initial={false}
       animate={{
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+        opacity: position.opacity,
         transform: `translate(-50%, -50%) ${generate3DTransform()} scale(${hoverScale})`,
       }}
       transition={{
+        left: {
+          duration: 0.6,
+          ease: [0.25, 0.25, 0.25, 1],
+        },
+        top: {
+          duration: 0.6,
+          ease: [0.25, 0.25, 0.25, 1],
+        },
+        opacity: {
+          duration: 0.3,
+          ease: "easeInOut",
+        },
         transform: {
           type: "spring",
           stiffness: isScrolling ? 300 : 100,  // 滚动时快速响应，停止时缓慢

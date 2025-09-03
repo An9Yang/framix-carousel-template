@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { TopNavigation } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 
@@ -13,8 +13,15 @@ import { Footer } from '@/components/layout/footer';
 export default function AboutPage() {
   const [activeService, setActiveService] = useState<string | null>(null);
   const [hoveredService, setHoveredService] = useState<string | null>(null);
-  const animationRef = React.useRef<number>();
+  const animationRef = React.useRef<number | null>(null);
   const lastUpdateTime = React.useRef<number>(0);
+  const listRef = React.useRef<HTMLDivElement | null>(null);
+  const overlayRef = React.useRef<HTMLDivElement | null>(null);
+  const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Smooth y transform for the floating preview (use transform instead of top)
+  const yMV = useMotionValue(0);
+  const ySpring = useSpring(yMV, { stiffness: 260, damping: 28, mass: 0.7 });
 
   React.useEffect(() => {
     // 使用 requestAnimationFrame 实现超流畅动画
@@ -41,6 +48,43 @@ export default function AboutPage() {
       }
     };
   }, [hoveredService, activeService]);
+
+  // Recalculate floating preview vertical position precisely
+  React.useLayoutEffect(() => {
+    if (!activeService || !listRef.current) return;
+    const containerRect = listRef.current.getBoundingClientRect();
+    const el = itemRefs.current[activeService];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+
+    // Assume a default preview height; fall back if not mounted yet
+    const fallbackH = 340; // match visual size below
+    const overlayH = overlayRef.current?.getBoundingClientRect().height ?? fallbackH;
+    const centerY = rect.top + rect.height / 2 - containerRect.top; // Y inside container
+    const targetY = centerY - overlayH / 2; // center-align
+    yMV.set(targetY);
+  }, [activeService, yMV]);
+
+  // Update position on resize/scroll to keep alignment perfect
+  React.useEffect(() => {
+    const handler = () => {
+      if (!activeService) return;
+      const containerRect = listRef.current?.getBoundingClientRect();
+      const el = activeService ? itemRefs.current[activeService] : null;
+      if (!containerRect || !el) return;
+      const rect = el.getBoundingClientRect();
+      const fallbackH = 340;
+      const overlayH = overlayRef.current?.getBoundingClientRect().height ?? fallbackH;
+      const centerY = rect.top + rect.height / 2 - containerRect.top;
+      yMV.set(centerY - overlayH / 2);
+    };
+    window.addEventListener('resize', handler);
+    window.addEventListener('scroll', handler, { passive: true } as any);
+    return () => {
+      window.removeEventListener('resize', handler);
+      window.removeEventListener('scroll', handler);
+    };
+  }, [activeService, yMV]);
 
   const services = [
     {
@@ -362,86 +406,94 @@ export default function AboutPage() {
                 </span>
               </div>
               <div className="lg:col-span-10">
-                <h2 className="text-5xl lg:text-6xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                <h2 className="font-semibold" style={{ color: 'var(--color-text-primary)', fontSize: '72px', lineHeight: 1.1 }}>
                   What we do
                 </h2>
               </div>
             </div>
           </div>
 
-          {/* 服务列表容器 - 相对定位 */}
-          <div className="max-w-7xl mx-auto relative"
-               onMouseLeave={() => setHoveredService(null)}>
+        {/* 服务列表容器 - 相对定位 */}
+        <div className="max-w-7xl mx-auto relative services-container"
+             ref={listRef}
+             onMouseLeave={() => setHoveredService(null)}>
             
             {/* 悬浮图片覆盖层 - 绝对定位，在卡片之外 */}
             <AnimatePresence mode="popLayout">
               {activeService && services.find(s => s.id === activeService)?.largeImage && (
                 <motion.div
-                  className="absolute pointer-events-none"
+                  className="absolute pointer-events-none hidden lg:block"
                   key={activeService}
-                  initial={{ opacity: 0, scale: 0.85, x: 60, y: -10 }}
+                  initial={{ opacity: 0, scale: 0.9, x: 40 }}
                   animate={{ 
-                    opacity: 1, 
-                    scale: 1, 
-                    x: 0,
-                    y: 0
+                    opacity: 1,
+                    scale: 1,
+                    x: 0
                   }}
                   exit={{ 
-                    opacity: 0, 
-                    scale: 0.9, 
-                    x: 40,
-                    y: -5
+                    opacity: 0,
+                    scale: 0.96,
+                    x: 24
                   }}
                   transition={{
                     type: "spring",
-                    stiffness: 260,
-                    damping: 26,
+                    stiffness: 300,
+                    damping: 30,
                     mass: 0.8,
                     opacity: { 
                       type: "tween",
-                      duration: 0.15,
+                      duration: 0.18,
                       ease: "easeOut" 
                     }
                   }}
                   style={{
-                    top: `${services.findIndex(s => s.id === activeService) * 106}px`, // 根据卡片位置调整
-                    right: '20px', // 在右侧显示
-                    width: '520px',
-                    height: '340px',
+                    top: 0, // 使用 transform: ySpring 对齐
+                    right: '-88px', // 参考图中向右外溢
+                    width: 'clamp(520px, 46vw, 860px)',
                     zIndex: 100,
                     willChange: 'transform, opacity'
                   }}
                 >
-                  <div 
-                    className="w-full h-full p-3"
-                    style={{
-                      backgroundColor: 'var(--color-surface)',
-                      borderRadius: 'var(--radius-lg)',
-                      boxShadow: '0 40px 120px rgba(0,0,0,0.18), 0 20px 40px rgba(0,0,0,0.1)',
-                      transform: 'perspective(1000px) rotateY(1deg) rotateX(-0.5deg)',
-                      transformStyle: 'preserve-3d'
-                    }}
+                  <motion.div
+                    ref={overlayRef}
+                    style={{ y: ySpring, width: '100%', aspectRatio: '16 / 9' }}
                   >
                     <div 
-                      className="w-full h-full overflow-hidden"
-                      style={{ 
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: '#FAFAFA'
+                      className="w-full h-full"
+                      style={{
+                        backgroundColor: 'transparent',
+                        borderRadius: '18px',
+                        boxShadow: 'var(--service-preview-shadow)',
+                        transform: `perspective(1600px) rotateZ(var(--service-preview-tilt))`,
+                        transformStyle: 'preserve-3d'
                       }}
                     >
-                      <motion.img 
-                        src={services.find(s => s.id === activeService)?.largeImage}
-                        alt={services.find(s => s.id === activeService)?.title}
-                        className="w-full h-full object-cover"
-                        initial={{ scale: 1.15 }}
-                        animate={{ scale: 1 }}
-                        transition={{ 
-                          duration: 0.8, 
-                          ease: [0.33, 1, 0.68, 1] 
+                      <div 
+                        className="w-full h-full overflow-hidden"
+                        style={{ 
+                          borderRadius: '16px',
+                          backgroundColor: '#F7F7F7',
+                          border: 'var(--service-preview-border) solid rgba(255,255,255,0.98)'
                         }}
-                      />
+                      >
+                        <AnimatePresence mode="wait">
+                          <motion.img 
+                            key={activeService}
+                            src={services.find(s => s.id === activeService)?.largeImage}
+                            alt={services.find(s => s.id === activeService)?.title}
+                            className="w-full h-full object-cover"
+                            initial={{ opacity: 0, scale: 1.02 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1 }}
+                            transition={{ 
+                              duration: 0.35, 
+                              ease: [0.2, 0.8, 0.2, 1]
+                            }}
+                          />
+                        </AnimatePresence>
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -463,33 +515,33 @@ export default function AboutPage() {
                     }}
                   >
                     <motion.div 
-                      className="relative cursor-pointer group"
+                      className={`relative cursor-pointer group service-row service-row-divider ${isActive ? 'service-row-active' : ''}`}
+                      ref={(el) => { itemRefs.current[service.id] = el; }}
                       onMouseEnter={() => setHoveredService(service.id)}
                       animate={{
-                        y: isActive ? -4 : 0,
-                        scale: isActive ? 1.005 : 1
+                        y: isActive ? -2 : 0,
+                        scale: isActive ? 1.002 : 1
                       }}
                       transition={{
                         type: "spring",
-                        stiffness: 350,
-                        damping: 30,
+                        stiffness: 280,
+                        damping: 32,
                         mass: 0.7
                       }}
                       style={{
                         backgroundColor: 'var(--color-surface)',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: isActive ? '0 25px 70px rgba(0,0,0,0.12), 0 10px 25px rgba(0,0,0,0.06)' : 'var(--elev-card)',
                         zIndex: isActive ? 20 : 1,
                         transformOrigin: 'center center',
-                        willChange: 'transform, box-shadow'
+                        willChange: 'transform, box-shadow',
+                        boxShadow: isActive ? 'var(--elev-hover)' : 'var(--elev-card)'
                       }}
                     >
-                      <div className="p-8 lg:p-10">
-                        <div className="grid grid-cols-12 gap-8 items-center">
+                      <div className="px-8 py-6 lg:px-10 lg:py-7">
+                        <div className="grid grid-cols-12 gap-6 items-center">
                           {/* 编号 */}
                           <div className="col-span-1">
                             <motion.span 
-                              className="text-xl font-bold block" 
+                              className="text-sm lg:text-base font-semibold tracking-wider block opacity-70" 
                               animate={{
                                 color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                                 scale: isActive ? 1.1 : 1
@@ -504,12 +556,12 @@ export default function AboutPage() {
                           </div>
 
                           {/* 标题 */}
-                          <div className="col-span-6">
+                          <div className="col-span-5 lg:col-span-4">
                             <motion.h3 
-                              className="text-2xl lg:text-3xl font-semibold" 
+                              className="text-2xl lg:text-3xl font-semibold tracking-tight" 
                               animate={{
                                 color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                                x: isActive ? 4 : 0
+                                x: isActive ? 2 : 0
                               }}
                               transition={{
                                 type: "spring",
@@ -521,37 +573,24 @@ export default function AboutPage() {
                             </motion.h3>
                           </div>
 
-                          {/* 描述文本 - 仅在hover时显示 */}
-                          <div className="col-span-5">
-                            <motion.div
-                              animate={{
-                                opacity: isActive ? 1 : 0,
-                                x: isActive ? 0 : -15
-                              }}
-                              transition={{
-                                opacity: { 
-                                  duration: 0.2,
-                                  ease: "easeOut"
-                                },
-                                x: {
-                                  type: "spring",
-                                  stiffness: 300,
-                                  damping: 25
-                                }
-                              }}
-                              style={{ 
-                                maxWidth: '300px'
-                              }}
+                          {/* 描述文本 - Always visible */}
+                          <div className="col-span-6 lg:col-span-7">
+                            <div
+                              style={{ maxWidth: '720px' }}
                             >
                               <p 
-                                className="text-base leading-relaxed"
+                                className="text-base lg:text-[18px] leading-relaxed"
                                 style={{ 
-                                  color: 'var(--color-text-muted)'
+                                  color: 'var(--color-text-muted)',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2 as any,
+                                  WebkitBoxOrient: 'vertical' as any,
+                                  overflow: 'hidden'
                                 }}
                               >
-                                {service.description.substring(0, 80)}...
+                                {service.description}
                               </p>
-                            </motion.div>
+                            </div>
                           </div>
                         </div>
                       </div>

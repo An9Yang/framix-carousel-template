@@ -27,6 +27,17 @@
     --elev-hover: 0 20px 60px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
     --elev-nav: 0 2px 6px rgba(0, 0, 0, 0.08);
     
+    /* Services section tokens */
+    --service-row-bg: #ececec;            /* card base */
+    --service-row-bg-active: #f5f5f5;     /* on hover/active */
+    --service-row-divider: rgba(0,0,0,0.06);
+    --service-row-radius: 16px;
+    --service-shadow: 0 10px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+    --service-shadow-active: 0 24px 60px rgba(0,0,0,0.14), 0 12px 24px rgba(0,0,0,0.08);
+    --service-preview-tilt: -4.5deg;
+    --service-preview-border: 6px;        /* white rim (thinner) */
+    --service-preview-shadow: 0 70px 160px rgba(0,0,0,0.22), 0 24px 70px rgba(0,0,0,0.14), 0 12px 24px rgba(0,0,0,0.10);
+    
     /* Original Tailwind CSS variables (keep for compatibility) */
     --background: 0 0% 94%;
     --foreground: 0 0% 6%;
@@ -212,5 +223,56 @@ body {
   
   .blur-depth-4 {
     filter: blur(4px) brightness(0.6);
+  }
+}
+
+/* Services section styles */
+@layer components {
+  .services-container {
+    position: relative;
+  }
+  .services-container::before {
+    /* subtle horizontal band crossing rows at midline */
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 80px;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,0.03) 40%,
+      rgba(0,0,0,0.04) 60%,
+      transparent 100%
+    );
+    border-radius: 100px;
+    filter: blur(0.2px);
+  }
+
+  .service-row {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--elev-card);
+  }
+  .service-row-active {
+    background: var(--color-surface);
+    box-shadow: var(--elev-hover);
+  }
+  .service-row-divider {
+    position: relative;
+  }
+  .service-row-divider::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-50%);
+    background: linear-gradient(to right, transparent, var(--service-row-divider), transparent);
+    opacity: .7;
   }
 }
